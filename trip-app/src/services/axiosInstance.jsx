@@ -23,14 +23,12 @@ function processQueue(error) {
 }
 
 
-
 export function setupAxiosInterceptors(onLogout) {
 
     axiosInstance.interceptors.response.use(
         response => response,
         async error => {
             const originalRequest = error.config;
-
             if ( error.response?.status !== 401 || originalRequest._retry) {
                 return Promise.reject(error);
             }
@@ -58,7 +56,6 @@ export function setupAxiosInterceptors(onLogout) {
 
             try {
                 await axiosInstance.post("/auth/refresh");
-                console.log("HIT refresh");
                 processQueue();
                 return axiosInstance(originalRequest);
             } catch (refreshError) {

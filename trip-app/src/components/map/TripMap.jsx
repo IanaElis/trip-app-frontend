@@ -110,8 +110,7 @@ function TripMap({ itinerary }) {
         
     }, [itinerary]);
 
-    console.log("Places for map:", places);
-
+    
     return (
         <MapContainer
             center={center}

@@ -13,9 +13,13 @@ function UsersPage() {
     }, []);
 
     async function loadUsers() {
+    try {
         const data = await adminApi.getUsers();
+         console.log("Users from backend:", data);
         setUsers(data);
+    } finally {
         setLoading(false);
+    }
     }
 
     async function toggleBlock(user) {
@@ -52,7 +56,7 @@ function UsersPage() {
                     {users.map(user => (
                         <tr key={user.id}
                         className={user.id === currentUser.id ? "user-row-disabled" : ""}
-                        style={{opacity: 0.6, pointerEvents: none}}>
+                        >
                             <td>{user.id}</td>
                             <td>{user.email}</td>
                             <td>{user.username}</td>

@@ -62,7 +62,7 @@ function Router() {
 
                     {/* Admin */}
                     <Route path="/users" element={
-                        <ProtectedRoute>
+                        <ProtectedRoute requiredRole="ADMIN">
                             <UsersPage />
                         </ProtectedRoute>
                     } />
