@@ -137,7 +137,7 @@ function CreateActivityModal({ tripId, show, onHide, onCreated }) {
                         </Col>
                         <Col xs="auto">
                             <Button type="submit">
-                                Add
+                                Create
                             </Button></Col>
                     </Row>
                 </Form>

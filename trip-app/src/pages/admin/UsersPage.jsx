@@ -1,44 +1,63 @@
-import { useEffect, useState } from "react";
-import { Table, Button } from "react-bootstrap";
+import { useEffect, useState, useMemo } from "react";
+import { Table, Button, Form } from "react-bootstrap";
 import { adminApi } from "../../services/adminService";
 import useAuth from "../../hooks/useAuth";
 
 function UsersPage() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const { user: currentUser} = useAuth();
+    const { user: currentUser } = useAuth();
+    const [search, setSearch] = useState("");
 
     useEffect(() => {
         loadUsers();
     }, []);
 
+    const filteredUsers = useMemo(() => {
+        return users.filter(user =>
+            user.email.toLowerCase().includes(search.toLowerCase())
+        );
+    }, [users, search]);
+
     async function loadUsers() {
-    try {
-        const data = await adminApi.getUsers();
-         console.log("Users from backend:", data);
-        setUsers(data);
-    } finally {
-        setLoading(false);
-    }
+        try {
+            const data = await adminApi.getUsers();
+            console.log("Users from backend:", data);
+            setUsers(data);
+        } finally {
+            setLoading(false);
+        }
     }
 
     async function toggleBlock(user) {
         console.log("toggleBlock input:", user);
         if (user.id === currentUser.id) return;
-         if (user.blocked) {
-        await adminApi.unblockUser(user.id);
-    } else {
-        await adminApi.blockUser(user.id);
-    }
+        if (user.blocked) {
+            await adminApi.unblockUser(user.id);
+        } else {
+            await adminApi.blockUser(user.id);
+        }
         loadUsers();
     }
 
 
     if (loading) return <p>Loading...</p>;
 
+
+
     return (
         <div className="p-4">
             <h2>Users</h2>
+
+            <Form className="mb-3 d-flex justify-content-end">
+                <Form.Control
+                    style={{ maxWidth: "400px" }}
+                    type="text"
+                    placeholder="Search by email..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+            </Form>
 
             <Table striped bordered hover responsive>
                 <thead>
@@ -53,9 +72,9 @@ function UsersPage() {
                 </thead>
 
                 <tbody>
-                    {users.map(user => (
+                    {filteredUsers.map(user => (
                         <tr key={user.id}
-                        className={user.id === currentUser.id ? "user-row-disabled" : ""}
+                            className={user.id === currentUser.id ? "user-row-disabled" : ""}
                         >
                             <td>{user.id}</td>
                             <td>{user.email}</td>

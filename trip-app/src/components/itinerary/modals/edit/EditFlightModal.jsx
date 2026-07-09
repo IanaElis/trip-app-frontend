@@ -191,7 +191,7 @@ function EditFlightModal({ show, onHide, onUpdated, item }) {
                         Cancel
                     </Button>
                     <Button type="submit">
-                        Save
+                        Save changes
                     </Button>
                 </Modal.Footer>
             </Form>

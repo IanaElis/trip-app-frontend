@@ -6,12 +6,17 @@ export default function ProtectedRoute({ children, requiredRole }) {
 
     if (loading)
         return <>Loading...</>;
+    
 
     if (!isAuthenticated)
         return <Navigate to="/login" replace />;
 
-     if (requiredRole === "ADMIN" && !isAdmin)
+     if (requiredRole === "ADMIN" && !isAdmin){
         return <Navigate to="/trips" replace />;
+    }else{
+        return <Navigate to="/users" replace/>
+    }
+
 
 
     return children;

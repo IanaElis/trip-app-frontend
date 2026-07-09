@@ -17,14 +17,20 @@
 }
 
 .trip-background {
-    
+    min-height: 220px;
+    min-width: 320px;
     background:
       linear-gradient(
-        135deg,
-        #2563EB,
-        #38BDF8
+          160deg,
+     #74dfeb,
+    #acb6e5,
+        #1e3c72,
+         #2a5298
       );
+    position: "relative";
+    overflow: "hidden";
 }
+
 
 .trip-overlay {
     position: absolute;

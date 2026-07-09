@@ -130,7 +130,6 @@ function EditTransportModal({ show, onHide, onUpdated, item }) {
                                 }))
                             }
                         />
-
                         <datalist id="company-list">
                             {companies.map(c => (
                                 <option key={c} value={c} />
@@ -244,7 +243,7 @@ function EditTransportModal({ show, onHide, onUpdated, item }) {
                         Cancel
                     </Button>
                     <Button type="submit">
-                        Save
+                        Save changes
                     </Button>
                 </Modal.Footer>
             </Form>

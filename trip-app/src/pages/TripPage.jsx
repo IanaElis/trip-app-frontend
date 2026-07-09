@@ -1,5 +1,5 @@
 import { Button, Col, Container, Row } from "react-bootstrap";
-import iceland from '../assets/iceland.jpg';
+import background from '../assets/background.jpg';
 import TripCard from "../components/trip/TripCard/TripCard";
 import { tripsApi } from "../services/tripService";
 import { useState, useEffect } from "react";
@@ -54,7 +54,7 @@ function TripPage() {
                             dateRange ={formatTripDates(trip.startDate, trip.endDate)}
                             duration={getTripDuration(trip.startDate, trip.endDate)}
                             countdown={getCountdown(trip.startDate, trip.endDate)}
-                            image={iceland}
+                            image={background}
                             onClick={() => navigate(`/trips/${trip.id}`)}
                         />
                     </Col>

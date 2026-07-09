@@ -195,7 +195,7 @@ function CreateFlightModal({ tripId, show, onHide, onCreated }) {
                         </Col>
                         <Col xs="auto">
                             <Button type="submit">
-                                Create Trip
+                                Create
                             </Button></Col>
                     </Row>
                 </Form>

@@ -10,6 +10,7 @@ function TripCard( {
         <>
             <Card className="trip-card border-0 shadow" onClick={onClick}>
                 <Card.Img variant="top" src={image} className="trip-image" alt="image" />
+              {/*  <div className="trip-background">*/}
                 <div className="trip-overlay">
                     <h5>{name}</h5>
 
@@ -25,6 +26,7 @@ function TripCard( {
                         </div>
                     
                 </div>
+                
             </Card>
         </>
     );

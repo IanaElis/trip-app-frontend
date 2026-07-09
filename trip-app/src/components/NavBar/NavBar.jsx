@@ -7,8 +7,9 @@ function NavBar() {
     const { isAdmin, logout, user } = useAuth();
 
     return (
-        <Navbar bg="dark" variant="dark" expand="lg">
-            <Container fluid>
+        <Navbar variant="dark" expand="lg" style={{background: 
+            "linear-gradient(90deg, #1e3c72, #2a5298)"}}>
+            <Container fluid style={{}}>
 
                 <Navbar.Brand className="fw-bold">
                     TripPlanner
@@ -31,7 +32,7 @@ function NavBar() {
                     </Nav>
 
                     <Nav className="ms-auto align-items-center">
-                        <Nav.Link as={Link} to="/notifications"
+ {/*                       <Nav.Link as={Link} to="/notifications"
                             className="d-flex align-items-center gap-1">
                             <Bell size={20} />
                             <span className="d-lg-none">
@@ -40,7 +41,7 @@ function NavBar() {
                             <Badge bg="danger" pill>
                                 3</Badge>
                         </Nav.Link>
-
+*/}
                         <NavDropdown
                             title={<>
                                 <PersonCircle className="me-2" size={22} />

@@ -22,8 +22,8 @@
     padding:6px 18px;
     margin:0 14px;
     border-radius:999px;
-    background:#219ed3;
+    background:linear-gradient(90deg, #31518b, #436bb0);
     font-weight:600;
-    color:#000000b7;
+    color:#f7f1f1;
     align-self: flex-start;
 }

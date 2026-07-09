@@ -1,0 +1,26 @@
+@media print {
+
+    .btn {
+        display: none !important;
+    }
+
+    body {
+        background: white;
+    }
+
+    .card {
+        border: 1px solid #bbb !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        box-shadow: none !important;
+        
+    }
+
+    h1, h2, h3, h4 {
+        page-break-after: avoid;
+    }
+
+    .report-item {
+        margin-bottom: 20px;
+    }
+}

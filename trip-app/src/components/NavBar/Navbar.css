@@ -1,0 +1,8 @@
+.custom-navbar .navbar-brand,
+.custom-navbar .nav-link {
+    color: #2563EB;
+}
+
+.custom-navbar .nav-link:hover {
+    color: #60A5FA;
+}

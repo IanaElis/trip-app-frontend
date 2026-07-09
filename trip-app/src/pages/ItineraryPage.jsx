@@ -1,4 +1,3 @@
-//format
 import AccommodationDetails from "../components/itinerary/TimelineItems/Accommodation/AccommodationDetails";
 import ActivityDetails from "../components/itinerary/TimelineItems/Activity/ActivityDetails";
 import { useState, useEffect } from "react";
@@ -11,7 +10,8 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import TimelineItem from "../components/itinerary/TimelineItems/TimelineItem";
 import { itineraryItemsApi } from "../services/itineraryService";
 import { useNavigate, useParams } from "react-router-dom";
-import iceland from '../assets/iceland.jpg';
+
+import iceland from '../assets/background.jpg';
 import "./ItineraryPage.css";
 import TripMap from "../components/map/TripMap";
 import { formatTripDates, getTripDuration, tripsApi } from "../services/tripService";

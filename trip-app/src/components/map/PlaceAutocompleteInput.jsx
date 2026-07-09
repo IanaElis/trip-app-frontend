@@ -77,8 +77,6 @@ function PlaceAutocompleteInput({
                 });
                 autocomplete.value = place.displayName;
 
-                console.log("PLACE:", place);
-
                 let city = "";
                 let country = "";
 
@@ -90,15 +88,6 @@ function PlaceAutocompleteInput({
                         country = c.longText;
                     }
                 });
-
-                const lat = typeof place.location?.lat === "function"
-                    ? place.location.lat()
-                    : place.location?.lat;
-
-                const lng = typeof place.location?.lng === "function"
-                    ? place.location.lng()
-                    : place.location?.lng;
-
 
                 onPlaceSelect?.({
                     googlePlaceId: place.id,

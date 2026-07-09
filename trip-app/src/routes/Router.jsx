@@ -11,7 +11,7 @@ import UsersPage from "../pages/admin/UsersPage"
 import AppLayout from "./AppLayout";
 import ResetPasswordPage from "../pages/auth/ResetPasswordPage"
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage"
-import ReportPage from "../pages/ReportPage";
+import SummaryPage from "../pages/SummaryPage";
 
 function Router() {
     return (
@@ -20,12 +20,12 @@ function Router() {
                 <Route index element={<TripPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
-                                    <Route path="/reset-password" element={
-                            <ResetPasswordPage />
-                    }/>
-                    <Route path="/forgot-password" element={
-                            <ForgotPasswordPage />
-                    }/>
+                <Route path="/reset-password" element={
+                    <ResetPasswordPage />
+                } />
+                <Route path="/forgot-password" element={
+                    <ForgotPasswordPage />
+                } />
 
                 <Route element={<AppLayout />}>
                     <Route path="/profile" element={
@@ -33,9 +33,9 @@ function Router() {
                             <ProfilePage />
                         </ProtectedRoute>
                     } />
-                     <Route path="trips/:tripId/report" element={
+                    <Route path="trips/:tripId/report" element={
                         <ProtectedRoute>
-                            <ReportPage />
+                            <SummaryPage />
                         </ProtectedRoute>
                     } />
                     <Route path="/notifications" element={
