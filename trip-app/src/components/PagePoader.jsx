@@ -2,7 +2,7 @@ import { Spinner } from "react-bootstrap";
 
 function PageLoader(){
     return(
-            <Spinner />
+        <Spinner animation="border" className="align-center" />
     );
 }
 

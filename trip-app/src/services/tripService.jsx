@@ -1,13 +1,13 @@
 import { axiosInstance } from "./axiosInstance.jsx";
 
-  async function handleRequest(request) {
-  try {
-    const res = await request();
-    return res.data;
-  } catch (err) {
-    console.error("API Error:", err);
-    throw err;
-  }
+async function handleRequest(request) {
+    try {
+        const res = await request();
+        return res.data;
+    } catch (err) {
+        console.error("API Error:", err);
+        throw err;
+    }
 }
 
 export const tripsApi = {
@@ -32,66 +32,74 @@ export const formatTripDates = (startDate, endDate) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-        const sameMonth = start.getMonth() === end.getMonth() &&
-            start.getFullYear() === end.getFullYear();
+    const sameMonth = start.getUTCMonth() === end.getUTCMonth() &&
+        start.getUTCFullYear() === end.getUTCFullYear();
 
-        const pastTrip = end < new Date();
+    const pastTrip = end < new Date();
 
-        let startPart;
-        if (sameMonth) {
-            startPart = new Intl.DateTimeFormat("en-GB", {
-                weekday: "short",
-                day: "numeric",
-            }).format(start);
-        }
-        else {
-            startPart = new Intl.DateTimeFormat("en-GB", {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-            }).format(start);
-        }
+    const options = {
+        weekday: "short",
+        day: "numeric",
+        timeZone: "UTC"
+    };
 
-        let endPart;
-        if (pastTrip) {
-            endPart = new Intl.DateTimeFormat("en-GB", {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-            }).format(end);
-        }
-        else {
-            endPart = new Intl.DateTimeFormat("en-GB", {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-            }).format(end);
-        }
-
-        return `${startPart} - ${endPart}`;
+    let startPart;
+    if (sameMonth) {
+        startPart = new Intl.DateTimeFormat("en-GB", options).format(start);
     }
+    else {
+        startPart = new Intl.DateTimeFormat("en-GB", {
+            ...options,
+            month: "short",
+        }).format(start);
+    }
+
+    let endPart;
+
+    if (pastTrip) {
+        endPart = new Intl.DateTimeFormat("en-GB", {
+            ...options,
+            month: "short",
+            year: "numeric",
+        }).format(end);
+    }
+    else {
+        endPart = new Intl.DateTimeFormat("en-GB", {
+            ...options,
+            month: "short",
+        }).format(end);
+    }
+
+    return `${startPart} - ${endPart}`;
+}
+
+
+export const toTripStartUtc = (date) => `${date}T00:00:00Z`;
+export const toTripEndUtc = (date) => `${date}T23:59:59Z`;
+
+
 
 export const getTripDuration = (startDate, endDate) => {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+    const start = new Date(startDate.substring(0, 10));
+    const end = new Date(endDate.substring(0, 10));
 
-        return Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
-    }
+    return Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+}
 
+export const getCountdown = (startDate, endDate) => {
+     const today = new Date();
+     today.setUTCHours(0, 0, 0, 0);
+ 
+     const start = new Date(startDate);
+     const end = new Date(endDate);
 
-export  const getCountdown = (startDate, endDate) => {
-        if(endDate && new Date(endDate) < new Date()) return null;
-        const today = new Date();
-        
-        const start = new Date(startDate);
-
-        today.setHours(start.getHours());
-
-        const days = Math.floor((start - today) / (1000 * 60 * 60 * 24));
-        if (days < 0) return "Started";
-        if (days === 0) return "Starts today";
-        if (days === 1) return "Starts tomorrow";
-
-        return `Starts in ${days} days`;
-    }
+     const daysTillStart = Math.floor((start - today) / (1000 * 60 * 60 * 24));
+     const daysBeforeEnd = Math.floor((end - today)/ (1000 * 60 * 60 *24));
+     
+     if (daysBeforeEnd < 0) return "Passed";
+     if (daysTillStart < 0) return "Started";
+     if (daysTillStart === 0) return "Starts today";
+     if (daysTillStart === 1) return "Starts tomorrow";
+ 
+     return `Starts in ${daysTillStart} days`; 
+}

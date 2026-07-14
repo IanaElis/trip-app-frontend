@@ -1,8 +1,11 @@
 import { authAPI } from "../../../services/authService";
 import { useState, useEffect } from "react";
-import { Button, Col, Container, Form, Row, Card } from "react-bootstrap";
+import { Button, Col, Container, Form, Row, Card, Alert } from "react-bootstrap";
+import { extractErrorMessage } from "../../../utils/extractErrorMessage";
 
 function ProfilePage() {
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
     const [form, setForm] = useState({
         username: "",
         email: "",
@@ -11,19 +14,20 @@ function ProfilePage() {
         confirmPassword: ""
     });
 
- const loadProfile = async () => {
-            const data = await authAPI.getUser();
-            setForm(prev => ({
-                ...prev,
-                username: data.username  ?? "",
-                email: data.email  ?? ""
-            }));
-        };
+    const loadProfile = async () => {
+        const data = await authAPI.getUser();
+        setForm(prev => ({
+            ...prev,
+            username: data.username ?? "",
+            email: data.email ?? ""
+        }));
+    };
 
 
 
     useEffect(() => {
-       
+        setError("");
+        setSuccess("");
         loadProfile();
     }, []);
 
@@ -38,30 +42,33 @@ function ProfilePage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSuccess("");
+        setError("");
 
         if (form.newPassword !== form.confirmPassword) {
             alert("Passwords do not match");
             return;
         }
-        try{
+        try {
 
-        const updatedUser = await authAPI.updateProfile({
-            username: form.username,
-            email: form.email,
-            currentPassword: form.currentPassword || null,
-            newPassword: form.newPassword || null
-        });
+            const updatedUser = await authAPI.updateProfile({
+                username: form.username,
+                email: form.email,
+                currentPassword: form.currentPassword || null,
+                newPassword: form.newPassword || null
+            });
 
-        setForm({
-    username: updatedUser.username,
-    email: updatedUser.email,
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: ""
-});
-    }catch(err){
-        console.log(err);
-    }
+            setForm({
+                username: updatedUser.username,
+                email: updatedUser.email,
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: ""
+            });
+            setSuccess("Profile updated successfully.");
+        } catch (err) {
+            setError(extractErrorMessage(err, "Error"));
+        }
     };
 
     return (
@@ -71,6 +78,17 @@ function ProfilePage() {
                     <Card>
                         <Card.Body>
                             <h5>Change personal information</h5>
+
+                            {success && (
+                                <Alert variant="success">
+                                    {success}
+                                </Alert>
+                            )}
+                            {error &&
+                                <Alert variant="danger">
+                                    {error}
+                                </Alert>
+                            }
 
                             <Form onSubmit={handleSubmit}>
                                 <Form.Group className="mb-3 mt-3">

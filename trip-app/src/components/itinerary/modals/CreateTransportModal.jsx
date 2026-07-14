@@ -1,13 +1,14 @@
-import { Modal, Form, Button, Col, Row } from "react-bootstrap";
+import { Modal, Form, Button, Col, Row, Alert } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import { itineraryItemsApi } from "../../../services/itineraryService";
 import { carriersApi } from "../../../services/carrierService";
 import DateTimePickerField from "../../DateTimePickerField";
 import PlaceAutocompleteInput from "../../map/PlaceAutocompleteInput";
+import { fromZonedTime } from "date-fns-tz";
 
-function CreateTransportModal({ tripId, show, onHide, onCreated }) {
+function CreateTransportModal({ tripId, show, onHide, onCreated, onUpdated }) {
     const [companies, setCompanies] = useState([]);
-
+    const [error, setError] = useState("");
     const [form, setForm] = useState({
         startDateTime: "",
         endDateTime: "",
@@ -43,13 +44,19 @@ function CreateTransportModal({ tripId, show, onHide, onCreated }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await itineraryItemsApi.createTransport(tripId, {
-            ...form,
-            startDateTime: new Date(form.startDateTime).toISOString(),
-            endDateTime: new Date(form.endDateTime).toISOString()
-        });
-        onCreated?.();
-        onHide();
+        setError("");
+        try {
+            await itineraryItemsApi.createTransport(tripId, {
+                ...form,
+                startDateTime: fromZonedTime(form.startDateTime, form.departureLocation.timezoneId).toISOString(),
+                endDateTime: fromZonedTime(form.endDateTime, form.arrivalLocation.timezoneId).toISOString()
+            });
+            onCreated?.();
+            onUpdated?.();
+            onHide();
+        } catch (err) {
+            setError(extractErrorMessage(err, "Error"));
+        }
     };
 
 
@@ -59,6 +66,12 @@ function CreateTransportModal({ tripId, show, onHide, onCreated }) {
             <Modal.Header closeButton>
                 <Modal.Title>Add Transport</Modal.Title>
             </Modal.Header>
+
+            {error &&
+                <Alert variant="danger">
+                    {error}
+                </Alert>
+            }
 
             <Modal.Body>
                 <Form onSubmit={handleSubmit}>
@@ -117,8 +130,7 @@ function CreateTransportModal({ tripId, show, onHide, onCreated }) {
                     <Form.Group className="mb-3">
                         <Form.Label>Departure Location</Form.Label>
                         {/* Google Places Autocomplete */}
-                            <PlaceAutocompleteInput
-                            value={form.departureLocation?.address ?? ""}
+                        <PlaceAutocompleteInput
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
                                     ...prev,
@@ -133,13 +145,13 @@ function CreateTransportModal({ tripId, show, onHide, onCreated }) {
                                         timezoneId: place.timezoneId
                                     }
                                 }))
-                            }}/>
+                            }} />
                     </Form.Group>
 
                     <Form.Group className="mb-3">
                         <Form.Label>Arrival Location</Form.Label>
                         {/* Google Places Autocomplete */}
-                            <PlaceAutocompleteInput
+                        <PlaceAutocompleteInput
                             value={form.arrivalLocation?.address ?? ""}
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
@@ -155,7 +167,7 @@ function CreateTransportModal({ tripId, show, onHide, onCreated }) {
                                         timezoneId: place.timezoneId
                                     }
                                 }))
-                            }}/>
+                            }} />
                     </Form.Group>
 
                     <Row className="g-2 mb-3">

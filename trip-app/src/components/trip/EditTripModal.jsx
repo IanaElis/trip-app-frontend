@@ -1,10 +1,11 @@
-import { Modal, Form, Button } from "react-bootstrap";
+import { Modal, Form, Button, Alert } from "react-bootstrap";
 import { useEffect, useState } from "react";
-import { tripsApi } from "../../services/tripService";
+import { tripsApi, toTripStartUtc, toTripEndUtc } from "../../services/tripService";
 import PlaceAutocompleteInput from "../map/PlaceAutocompleteInput";
+import { extractErrorMessage } from "../../utils/extractErrorMessage";
 
 function EditTripModal({ show, onHide, trip, onUpdated }) {
-
+    const [error, setError] = useState("");
     const [form, setForm] = useState({
         name: "",
         description: "",
@@ -22,7 +23,7 @@ function EditTripModal({ show, onHide, trip, onUpdated }) {
                     ? {
                         googlePlaceId: trip.destination.googlePlaceId,
                         name: trip.destination.name,
-                        ddress: trip.destination.formattedAddress || trip.destination.address,
+                        address: trip.destination.formattedAddress,
                         city: trip.destination.city,
                         country: trip.destination.country,
                         latitude: trip.destination.latitude,
@@ -36,6 +37,7 @@ function EditTripModal({ show, onHide, trip, onUpdated }) {
         }
     }, [trip]);
 
+
     function handleChange(e) {
         setForm(prev => ({
             ...prev,
@@ -45,15 +47,20 @@ function EditTripModal({ show, onHide, trip, onUpdated }) {
 
     async function handleSubmit(e) {
         e.preventDefault();
-        console.log("Dest: ", form.destination);
-        await tripsApi.updateTrip(trip.id, {
-            ...form,
-            startDate: new Date(form.startDate).toISOString(),
-            endDate: new Date(form.endDate).toISOString()
-        });
-
-        onUpdated?.();
-        onHide();
+        setError("");
+        const start = toTripStartUtc(form.startDate);
+        const end = toTripEndUtc(form.endDate);
+        try {
+            await tripsApi.updateTrip(trip.id, {
+                ...form,
+                startDate: start,
+                endDate: end
+            });
+            onUpdated?.();
+            onHide();
+        } catch (err) {
+            setError(extractErrorMessage(err, "Error"));
+        }
     }
 
     return (
@@ -61,6 +68,12 @@ function EditTripModal({ show, onHide, trip, onUpdated }) {
             <Modal.Header closeButton>
                 <Modal.Title>Edit Trip</Modal.Title>
             </Modal.Header>
+
+            {error &&
+                <Alert variant="danger">
+                    {error}
+                </Alert>
+            }
 
             <Form onSubmit={handleSubmit}>
                 <Modal.Body>
@@ -87,7 +100,6 @@ function EditTripModal({ show, onHide, trip, onUpdated }) {
                     <Form.Group className="mb-3">
                         <Form.Label>Destination</Form.Label>
                         <PlaceAutocompleteInput
-                            value={form.destination?.formattedAddress || ""}
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
                                     ...prev,

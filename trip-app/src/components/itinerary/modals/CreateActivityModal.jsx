@@ -1,11 +1,12 @@
-import { Modal, Form, Button, Col, Row } from "react-bootstrap";
+import { Modal, Form, Button, Col, Row, Alert } from "react-bootstrap";
 import { useState } from "react";
 import { itineraryItemsApi } from "../../../services/itineraryService";
 import DateTimePickerField from "../../DateTimePickerField";
 import PlaceAutocompleteInput from "../../map/PlaceAutocompleteInput";
+import { fromZonedTime } from "date-fns-tz";
 
-function CreateActivityModal({ tripId, show, onHide, onCreated }) {
-
+function CreateActivityModal({ tripId, show, onHide, onCreated, onUpdated }) {
+    const [error, setError] = useState("");
     const [form, setForm] = useState({
         startDateTime: "",
         endDateTime: "",
@@ -24,14 +25,19 @@ function CreateActivityModal({ tripId, show, onHide, onCreated }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log(form);
-        await itineraryItemsApi.createActivity(tripId, {
-            ...form,
-            startDateTime: new Date(form.startDateTime).toISOString(),
-            endDateTime: new Date(form.endDateTime).toISOString()
-        });
-        onCreated?.();
-        onHide();
+        setError("");
+        try {
+            await itineraryItemsApi.createActivity(tripId, {
+                ...form,
+                startDateTime: fromZonedTime(form.startDateTime, form.location.timezoneId).toISOString(),
+                endDateTime: fromZonedTime(form.endDateTime, form.location.timezoneId).toISOString()
+            });
+            onCreated?.();
+            onUpdated?.();
+            onHide();
+        } catch (err) {
+            setError(extractErrorMessage(err, "Error"));
+        }
     };
 
 
@@ -41,6 +47,12 @@ function CreateActivityModal({ tripId, show, onHide, onCreated }) {
             <Modal.Header closeButton>
                 <Modal.Title>Add Activity</Modal.Title>
             </Modal.Header>
+
+            {error &&
+                <Alert variant="danger">
+                    {error}
+                </Alert>
+            }
 
             <Modal.Body>
                 <Form onSubmit={handleSubmit}>
@@ -68,7 +80,6 @@ function CreateActivityModal({ tripId, show, onHide, onCreated }) {
                         <Form.Label>Location</Form.Label>
                         {/* Google Places Autocomplete */}
                         <PlaceAutocompleteInput
-                            value={form.location?.formattedAddress ?? ""}
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
                                     ...prev,
@@ -83,7 +94,7 @@ function CreateActivityModal({ tripId, show, onHide, onCreated }) {
                                         timezoneId: place.timezoneId
                                     }
                                 }))
-                            }}/>
+                            }} />
                     </Form.Group>
 
                     <Row className="mb-3">

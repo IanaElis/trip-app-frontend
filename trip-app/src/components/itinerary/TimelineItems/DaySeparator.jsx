@@ -9,14 +9,14 @@ function formatDate(date) {
 }
 
 function DaySeparator({ date }) {
-    const d = new Date(date);
+   /* const d = new Date(date);
 
      const formatted = new Intl.DateTimeFormat(undefined, "en-GB", {
         weekday: "long",
         day: "numeric",
         month: "long"
     }).format(d);
-
+   */
 
 
     return (

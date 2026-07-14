@@ -1,62 +1,32 @@
-import { useEffect, useRef } from "react";
-
-function loadGoogleMaps(apiKey) {
-    return new Promise((resolve, reject) => {
-        if (window.google?.maps) {
-            resolve(window.google);
-            return;
-        }
-
-        const existing = document.getElementById("google-maps-script");
-
-        if (existing) {
-            existing.addEventListener("load", () => resolve(window.google));
-            return;
-        }
-
-        const script = document.createElement("script");
-        script.id = "google-maps-script";
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-        script.async = true;
-
-        script.onload = () => resolve(window.google);
-        script.onerror = reject;
-
-        document.head.appendChild(script);
-    });
-}
+import { useEffect, useRef, useState } from "react";
+import { importLibrary } from "@googlemaps/js-api-loader"
 
 
 function PlaceAutocompleteInput({
-    value,
     onPlaceSelect,
 }) {
     const inputRef = useRef(null);
     const containerRef = useRef(null);
+    const sessionTokenRef = useRef(null);
+    let autocomplete;
+
 
     useEffect(() => {
-        const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
-        if (!apiKey) {
-            console.error("Missing Google Maps API key");
-            return;
-        }
-
         let cancelled = false;
 
         async function init() {
-            const google = await loadGoogleMaps(apiKey);
+            if (cancelled) return;
 
-            if (cancelled || !google?.maps) return;
-
-            const { PlaceAutocompleteElement } =
-                await google.maps.importLibrary("places");
+            const { PlaceAutocompleteElement, AutocompleteSessionToken } = await importLibrary("places");
 
             if (!containerRef.current) return;
-
             containerRef.current.innerHTML = "";
 
-            const autocomplete = new PlaceAutocompleteElement();
+            sessionTokenRef.current = new AutocompleteSessionToken();
+
+           // const 
+            autocomplete = new PlaceAutocompleteElement();
+            autocomplete.sessionToken = sessionTokenRef.current;
 
             inputRef.current = autocomplete;
             containerRef.current.appendChild(autocomplete);
@@ -99,6 +69,9 @@ function PlaceAutocompleteInput({
                     longitude: place.location?.lng(),
                     timezoneId: place.timeZone?.id
                 });
+
+                sessionTokenRef.current = new AutocompleteSessionToken();
+                autocomplete.sessionToken = sessionTokenRef.current;
             });
         }
 
@@ -110,7 +83,7 @@ function PlaceAutocompleteInput({
                 containerRef.current.innerHTML = "";
         };
     }, []);
-    //onPlaceSelect
+
     return (
         <div>
             <div ref={containerRef} />

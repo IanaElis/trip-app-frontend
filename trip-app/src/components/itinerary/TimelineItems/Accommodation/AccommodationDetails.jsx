@@ -5,18 +5,23 @@ import TimelineRow from "../TimelineRow/TimelineRow";
 
 function AccommodationDetails({ event, onClick }) {
     const accommodation = event.item.details;
+    const timeZone = accommodation.location?.timezoneId;
+
+       const formatTime = (dateTime, timeZone) => {
+        if (!dateTime) return "";
+        if(!timeZone) return "";
+       return new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone
+    }).format(new Date(dateTime));
+    }
 
     const details = [
          event.time && event.type === "CHECK_IN" &&
-        `Check-in: ${new Date( event.time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit"
-            })}`,
+        `Check-in: ${formatTime(event.time, timeZone)}`,
          event.time && event.type === "CHECK_OUT" &&
-        `Check-out: ${new Date( event.time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit"
-            })}`,
+        `Check-out: ${formatTime(event.time, timeZone)}`,
         accommodation.location?.formattedAddress,
     ].filter(Boolean);
 

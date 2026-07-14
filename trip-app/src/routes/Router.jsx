@@ -15,7 +15,6 @@ import SummaryPage from "../pages/SummaryPage";
 
 function Router() {
     return (
-        <BrowserRouter>
             <Routes>
                 <Route index element={<TripPage />} />
                 <Route path="/login" element={<LoginPage />} />
@@ -29,32 +28,32 @@ function Router() {
 
                 <Route element={<AppLayout />}>
                     <Route path="/profile" element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRole="USER">
                             <ProfilePage />
                         </ProtectedRoute>
                     } />
-                    <Route path="trips/:tripId/report" element={
-                        <ProtectedRoute>
+                    <Route path="trips/:tripId/summary" element={
+                        <ProtectedRoute allowedRole="USER">
                             <SummaryPage />
                         </ProtectedRoute>
                     } />
                     <Route path="/notifications" element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRole="USER">
                             <NotificationsPage />
                         </ProtectedRoute>
                     } />
                     <Route path="/trips" element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRole="USER">
                             <TripPage />
                         </ProtectedRoute>
                     } />
                     <Route path="/trips/:tripId" element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRole="USER">
                             <ItineraryPage />
                         </ProtectedRoute>
                     } />
                     <Route path="/trips/:tripId/items/:itemType/:itemId" element={
-                        <ProtectedRoute>
+                        <ProtectedRoute allowedRole="USER">
                             <FullItemPage />
                         </ProtectedRoute>
                     } />
@@ -62,14 +61,13 @@ function Router() {
 
                     {/* Admin */}
                     <Route path="/users" element={
-                        <ProtectedRoute requiredRole="ADMIN">
+                        <ProtectedRoute allowedRole="ADMIN">
                             <UsersPage />
                         </ProtectedRoute>
                     } />
 
                 </Route>
             </Routes>
-        </BrowserRouter>
     );
 }
 

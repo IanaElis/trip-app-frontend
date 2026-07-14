@@ -5,10 +5,14 @@ import { carriersApi } from "../../../../services/carrierService";
 import Select from "react-select";
 import DateTimePickerField from "../../../DateTimePickerField";
 import { useParams } from "react-router-dom";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import PlaceAutocompleteInput from "../../../map/PlaceAutocompleteInput";
+import { extractErrorMessage } from "../../../../utils/extractErrorMessage";
 
 function EditFlightModal({ show, onHide, onUpdated, item }) {
     const [airlines, setAirlines] = useState([]);
-    const {tripId} = useParams();
+    const [error, setError] = useState("");
+    const { tripId } = useParams();
 
     const [form, setForm] = useState({
         startDateTime: "",
@@ -22,50 +26,58 @@ function EditFlightModal({ show, onHide, onUpdated, item }) {
     });
 
     useEffect(() => {
-        carriersApi.getAirlines().then(setAirlines);
+        const load = async () => {
+            const data = await carriersApi.getAirlines();
+            setAirlines(data);
+        }
+        load();
     }, []);
 
-    useEffect(() => {
-        if (!item) return;
-
-        setForm({
-            startDateTime: item.startDateTime || "",
-            endDateTime: item.endDateTime || "",
-            notes: item.notes || "",
-            confirmationNumber: item.confirmationNumber || "",
-            airlineIataCode: item.airline?.iataCode || "",
-            departureAirport:                item.departureAirport
-                    ? {
-                        googlePlaceId: item.departureAirport.googlePlaceId,
-                        name: item.departureAirport.name,
-                        address: item.departureAirport.formattedAddress || item.departureAirport.address,
-                        city: item.departureAirport.city,
-                        country: item.departureAirport.country,
-                        latitude: item.departureAirport.latitude,
-                        longitude: item.departureAirport.longitude,
-                        timezoneId: item.departureAirport.timezoneId
-                    }
-                    : null,
-            arrivalAirport:               item.arrivalAirport
-                    ? {
-                        googlePlaceId: item.arrivalAirport.googlePlaceId,
-                        name: item.arrivalAirport.name,
-                        address: item.arrivalAirport.formattedAddress || item.arrivalAirport.address,
-                        city: item.arrivalAirport.city,
-                        country: item.arrivalAirport.country,
-                        latitude: item.arrivalAirport.latitude,
-                        longitude: item.arrivalAirport.longitude,
-                        timezoneId: item.arrivalAirport.timezoneId
-                    }
-                    : null,
-            flightNumber: item.flightNumber || ""
-        });
-    }, [item]);
 
     const airlineOptions = airlines.map(a => ({
         value: a.iataCode,
         label: a.name
     }));
+
+
+
+    useEffect(() => {
+        if (!item) return;
+
+        setForm({
+            startDateTime: toZonedTime(item.startDateTime, item.departureAirport.timezoneId) || "",
+            endDateTime: toZonedTime(item.endDateTime, item.arrivalAirport.timezoneId) || "",
+            notes: item.notes || "",
+            confirmationNumber: item.confirmationNumber || "",
+            airlineIataCode: item.airline?.iataCode || "",
+            departureAirport: item.departureAirport
+                ? {
+                    googlePlaceId: item.departureAirport.googlePlaceId,
+                    name: item.departureAirport.name,
+                    address: item.departureAirport.formattedAddress || item.departureAirport.address,
+                    city: item.departureAirport.city,
+                    country: item.departureAirport.country,
+                    latitude: item.departureAirport.latitude,
+                    longitude: item.departureAirport.longitude,
+                    timezoneId: item.departureAirport.timezoneId
+                }
+                : null,
+            arrivalAirport: item.arrivalAirport
+                ? {
+                    googlePlaceId: item.arrivalAirport.googlePlaceId,
+                    name: item.arrivalAirport.name,
+                    address: item.arrivalAirport.formattedAddress || item.arrivalAirport.address,
+                    city: item.arrivalAirport.city,
+                    country: item.arrivalAirport.country,
+                    latitude: item.arrivalAirport.latitude,
+                    longitude: item.arrivalAirport.longitude,
+                    timezoneId: item.arrivalAirport.timezoneId
+                }
+                : null,
+            flightNumber: item.flightNumber || ""
+        });
+    }, [item]);
+
 
     function handleChange(e) {
         setForm(prev => ({
@@ -76,15 +88,18 @@ function EditFlightModal({ show, onHide, onUpdated, item }) {
 
     async function handleSubmit(e) {
         e.preventDefault();
-
-        await itineraryItemsApi.updateFlight(tripId, item.id, {
-            ...form,
-            startDateTime: new Date(form.startDateTime).toISOString(),
-            endDateTime: new Date(form.endDateTime).toISOString()
-        });
-
-        onUpdated?.();
-        onHide();
+        console.log(fromZonedTime(form.startDateTime, form.departureAirport.timezoneId).toISOString());
+        try {
+            await itineraryItemsApi.updateFlight(tripId, item.id, {
+                ...form,
+                startDateTime: fromZonedTime(form.startDateTime, form.departureAirport.timezoneId).toISOString(),
+                endDateTime: fromZonedTime(form.endDateTime, form.arrivalAirport.timezoneId).toISOString()
+            });
+            onUpdated?.();
+            onHide();
+        } catch (err) {
+            setError(extractErrorMessage(err, "Error"));
+        }
     }
 
     return (
@@ -92,6 +107,12 @@ function EditFlightModal({ show, onHide, onUpdated, item }) {
             <Modal.Header closeButton>
                 <Modal.Title>Edit Flight</Modal.Title>
             </Modal.Header>
+
+            {error &&
+                <Alert variant="danger">
+                    {error}
+                </Alert>
+            }
 
             <Form onSubmit={handleSubmit}>
                 <Modal.Body>
@@ -122,20 +143,42 @@ function EditFlightModal({ show, onHide, onUpdated, item }) {
 
                     <Form.Group className="mb-3">
                         <Form.Label>Departure</Form.Label>
-                        <Form.Control
-                            name="departureAirport"
-                            value={form.departureAirport}
-                            onChange={handleChange}
-                        />
+                        <PlaceAutocompleteInput
+                            onPlaceSelect={(place) => {
+                                setForm(prev => ({
+                                    ...prev,
+                                    departureAirport: {
+                                        googlePlaceId: place.googlePlaceId,
+                                        name: place.name,
+                                        address: place.formattedAddress,
+                                        city: place.city,
+                                        country: place.country,
+                                        latitude: place.latitude,
+                                        longitude: place.longitude,
+                                        timezoneId: place.timezoneId
+                                    }
+                                }))
+                            }} />
                     </Form.Group>
 
                     <Form.Group className="mb-3">
                         <Form.Label>Arrival</Form.Label>
-                        <Form.Control
-                            name="arrivalAirport"
-                            value={form.arrivalAirport}
-                            onChange={handleChange}
-                        />
+                        <PlaceAutocompleteInput
+                            onPlaceSelect={(place) => {
+                                setForm(prev => ({
+                                    ...prev,
+                                    arrivalAirport: {
+                                        googlePlaceId: place.googlePlaceId,
+                                        name: place.name,
+                                        address: place.formattedAddress,
+                                        city: place.city,
+                                        country: place.country,
+                                        latitude: place.latitude,
+                                        longitude: place.longitude,
+                                        timezoneId: place.timezoneId
+                                    }
+                                }))
+                            }} />
                     </Form.Group>
 
                     <Row className="g-2 mb-3">

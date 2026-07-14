@@ -1,44 +1,48 @@
 import { Modal, Form, Button, Col, Row } from "react-bootstrap";
 import { useEffect, useState } from "react";
-import { itineraryItemsApi} from "../../../../services/itineraryService"
+import { itineraryItemsApi } from "../../../../services/itineraryService"
 import DateTimePickerField from "../../../DateTimePickerField";
 import { useParams } from "react-router-dom";
 import PlaceAutocompleteInput from "../../../map/PlaceAutocompleteInput";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { extractErrorMessage } from "../../../../utils/extractErrorMessage";
 
 function EditAccommodationModal({ show, onHide, item, onUpdated }) {
-    const {tripId} = useParams();
-
+    const { tripId } = useParams();
+    const [error, setError] = useState("");
     const [form, setForm] = useState({
         startDateTime: "",
         endDateTime: "",
         notes: "",
         reservationNumber: "",
         location: null,
+        locationName: ""
     });
+
 
     useEffect(() => {
         if (!item) return;
-
         setForm({
-            startDateTime: item.startDateTime ? item.startDateTime.substring(0, 16) : "",
-            endDateTime: item.endDateTime ? item.endDateTime.substring(0, 16) : "",
+            startDateTime: toZonedTime(item.startDateTime, item.location.timezoneId) || "",
+            endDateTime: toZonedTime(item.endDateTime, item.location.timezoneId) || "",
             notes: item.notes || "",
             reservationNumber: item.reservationNumber || "",
             location: item.location
-                    ? {
-                        googlePlaceId:item.location.googlePlaceId,
-                        name:item.location.name,
-                        address:item.location.formattedAddress ||item.location.address,
-                        city:item.location.city,
-                        country:item.location.country,
-                        latitude:item.location.latitude,
-                        longitude:item.location.longitude,
-                        timezoneId:item.location.timezoneId
-                    }
-                    : null,
+                ? {
+                    googlePlaceId: item.location.googlePlaceId,
+                    name: item.location.name,
+                    address: item.location.formattedAddress || item.location.address,
+                    city: item.location.city,
+                    country: item.location.country,
+                    latitude: item.location.latitude,
+                    longitude: item.location.longitude,
+                    timezoneId: item.location.timezoneId
+                }
+                : null,
             locationName: item.location?.name || ""
         });
     }, [item]);
+
 
     function handleChange(e) {
         setForm(prev => ({
@@ -47,25 +51,20 @@ function EditAccommodationModal({ show, onHide, item, onUpdated }) {
         }));
     }
 
-    function handlePlaceSelect(place) {
-        setForm(prev => ({
-            ...prev,
-            location: place,
-            locationName: place.formatted_address || place.name || ""
-        }));
-    }
-
     async function handleSubmit(e) {
         e.preventDefault();
 
-        await itineraryItemsApi.updateAccommodation(tripId ,item.id, {
-            ...form,
-            startDateTime: new Date(form.startDateTime).toISOString(),
-            endDateTime: new Date(form.endDateTime).toISOString()
-        });
-
-        onUpdated?.();
-        onHide();
+        try {
+            await itineraryItemsApi.updateAccommodation(tripId, item.id, {
+                ...form,
+                startDateTime: fromZonedTime(form.startDateTime, form.location.timezoneId).toISOString(),
+                endDateTime: fromZonedTime(form.endDateTime, form.location.timezoneId).toISOString()
+            });
+            onUpdated?.();
+            onHide();
+        } catch (err) {
+            setError(extractErrorMessage(err, "Error"));
+        }
     }
 
     return (
@@ -74,13 +73,18 @@ function EditAccommodationModal({ show, onHide, item, onUpdated }) {
                 <Modal.Title>Edit Accommodation</Modal.Title>
             </Modal.Header>
 
+            {error &&
+                <Alert variant="danger">
+                    {error}
+                </Alert>
+            }
+
             <Form onSubmit={handleSubmit}>
                 <Modal.Body>
 
                     <Form.Group className="mb-3">
                         <Form.Label>Location</Form.Label>
                         <PlaceAutocompleteInput
-                            value={form.location?.formattedAddress ?? ""}
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
                                     ...prev,

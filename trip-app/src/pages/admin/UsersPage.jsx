@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Table, Button, Form } from "react-bootstrap";
+import { Table, Button, Form, Spinner } from "react-bootstrap";
 import { adminApi } from "../../services/adminService";
 import useAuth from "../../hooks/useAuth";
 
@@ -22,7 +22,6 @@ function UsersPage() {
     async function loadUsers() {
         try {
             const data = await adminApi.getUsers();
-            console.log("Users from backend:", data);
             setUsers(data);
         } finally {
             setLoading(false);
@@ -30,7 +29,6 @@ function UsersPage() {
     }
 
     async function toggleBlock(user) {
-        console.log("toggleBlock input:", user);
         if (user.id === currentUser.id) return;
         if (user.blocked) {
             await adminApi.unblockUser(user.id);
@@ -41,7 +39,7 @@ function UsersPage() {
     }
 
 
-    if (loading) return <p>Loading...</p>;
+    if (loading) return  <Spinner animation="border" className="align-center" />;
 
 
 

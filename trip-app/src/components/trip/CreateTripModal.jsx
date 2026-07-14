@@ -1,17 +1,20 @@
-import { Modal, Form, Button, Col, Row } from "react-bootstrap";
-import { useState } from "react";
-import { tripsApi } from "../../services/tripService";
+import { Modal, Form, Button, Col, Row, Alert } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import { tripsApi, toTripStartUtc, toTripEndUtc } from "../../services/tripService";
 import PlaceAutocompleteInput from "../map/PlaceAutocompleteInput";
+import { extractErrorMessage } from "../../utils/extractErrorMessage"
 
 function CreateTripModal({ show, onHide, onCreated }) {
-
-    const [form, setForm] = useState({
+    const initialForm = {
         name: "",
         description: "",
         startDate: "",
         endDate: "",
         destination: null
-    });
+    };
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [form, setForm] = useState(initialForm);
 
     function handleChange(e) {
         setForm({
@@ -20,15 +23,34 @@ function CreateTripModal({ show, onHide, onCreated }) {
         });
     }
 
+    useEffect(() => {
+        if (show) {
+            setForm(initialForm);
+            setError("");
+            setLoading(false);
+        }
+    }, [show]);
+
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await tripsApi.createTrip({
-            ...form,
-            startDate: new Date(form.startDate).toISOString(),
-            endDate: new Date(form.endDate).toISOString()
-        });
-        onCreated?.();
-        onHide();
+        setLoading(true);
+        setError("");
+        const start = toTripStartUtc(form.startDate);
+        const end = toTripEndUtc(form.endDate);
+        try {
+            await tripsApi.createTrip({
+                ...form,
+                startDate: start,
+                endDate: end
+            });
+            onCreated?.();
+            onHide();
+        } catch (err) {
+            setError(extractErrorMessage(err, "smth went wrong"));
+        } finally {
+            setLoading(false);
+        }
     };
 
 
@@ -38,6 +60,12 @@ function CreateTripModal({ show, onHide, onCreated }) {
             <Modal.Header closeButton>
                 <Modal.Title>Create Trip</Modal.Title>
             </Modal.Header>
+
+            {error &&
+                <Alert variant="danger">
+                    {error}
+                </Alert>
+            }
 
             <Modal.Body>
                 <Form onSubmit={handleSubmit}>
@@ -62,13 +90,7 @@ function CreateTripModal({ show, onHide, onCreated }) {
 
                     <Form.Group className="mb-3">
                         <Form.Label>Destination</Form.Label>
-                        {/* Google Places Autocomplete 
-                            <Form.Control 
-                            name="destination"
-                            value={form.destination}
-                             required/>*/}
                         <PlaceAutocompleteInput
-                            value={form.destination?.formattedAddress ?? ""}
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
                                     ...prev,

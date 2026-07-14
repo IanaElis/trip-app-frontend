@@ -4,10 +4,12 @@ import { itineraryItemsApi } from "../../../../services/itineraryService";
 import DateTimePickerField from "../../../DateTimePickerField";
 import { useParams } from "react-router-dom";
 import PlaceAutocompleteInput from "../../../map/PlaceAutocompleteInput";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { extractErrorMessage } from "../../../../utils/extractErrorMessage";
 
 function EditActivityModal({ show, onHide, onUpdated, item }) {
-    const {tripId} = useParams();
-
+    const { tripId } = useParams();
+    const [error, setError] = useState("");
     const [form, setForm] = useState({
         startDateTime: "",
         endDateTime: "",
@@ -21,23 +23,23 @@ function EditActivityModal({ show, onHide, onUpdated, item }) {
         if (!item) return;
 
         setForm({
-            startDateTime: item.startDateTime || "",
-            endDateTime: item.endDateTime || "",
+            startDateTime: toZonedTime(item.startDateTime, item.location.timezoneId) || "",
+            endDateTime: toZonedTime(item.endDateTime, item.location.timezoneId) || "",
             notes: item.notes || "",
             title: item.title || "",
             description: item.description || "",
-            location:                 item.location
-                    ? {
-                        googlePlaceId: item.location.googlePlaceId,
-                        name: item.location.name,
-                        address: item.location.formattedAddress || item.location.address,
-                        city: item.location.city,
-                        country: item.location.country,
-                        latitude: item.location.latitude,
-                        longitude: item.location.longitude,
-                        timezoneId: item.location.timezoneId
-                    }
-                    : null,
+            location: item.location
+                ? {
+                    googlePlaceId: item.location.googlePlaceId,
+                    name: item.location.name,
+                    address: item.location.formattedAddress || item.location.address,
+                    city: item.location.city,
+                    country: item.location.country,
+                    latitude: item.location.latitude,
+                    longitude: item.location.longitude,
+                    timezoneId: item.location.timezoneId
+                }
+                : null,
         });
     }, [item]);
 
@@ -50,15 +52,17 @@ function EditActivityModal({ show, onHide, onUpdated, item }) {
 
     async function handleSubmit(e) {
         e.preventDefault();
-
-        await itineraryItemsApi.updateActivity(tripId, item.id, {
-            ...form,
-            startDateTime: new Date(form.startDateTime).toISOString(),
-            endDateTime: new Date(form.endDateTime).toISOString()
-        });
-
-        onUpdated?.();
-        onHide();
+        try {
+            await itineraryItemsApi.updateActivity(tripId, item.id, {
+                ...form,
+                startDateTime: fromZonedTime(form.startDateTime, form.location.timezoneId).toISOString(),
+                endDateTime: fromZonedTime(form.endDateTime, form.location.timezoneId).toISOString()
+            });
+            onUpdated?.();
+            onHide();
+        } catch (err) {
+            setError(extractErrorMessage(err, "Error"));
+        }
     }
 
     return (
@@ -66,6 +70,12 @@ function EditActivityModal({ show, onHide, onUpdated, item }) {
             <Modal.Header closeButton>
                 <Modal.Title>Edit Activity</Modal.Title>
             </Modal.Header>
+
+            {error &&
+                <Alert variant="danger">
+                    {error}
+                </Alert>
+            }
 
             <Form onSubmit={handleSubmit}>
                 <Modal.Body>
@@ -92,7 +102,6 @@ function EditActivityModal({ show, onHide, onUpdated, item }) {
                     <Form.Group className="mb-3">
                         <Form.Label>Location</Form.Label>
                         <PlaceAutocompleteInput
-                            value={form.location?.address ?? ""}
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
                                     ...prev,

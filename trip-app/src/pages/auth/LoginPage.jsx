@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
-//import LoginForm from "../../components/auth/LoginForm";
 import { Alert, Button, Card, Col, Container, Form, Row } from "react-bootstrap";
+import {extractErrorMessage} from "../../utils/extractErrorMessage";
 
 function LoginPage() {
     const navigate = useNavigate();
@@ -31,10 +31,10 @@ function LoginPage() {
             await login(form);
             navigate("/trips");
         } catch (err) {
-            setError(
-                err.response?.data?.message ??
-                "Invalid email or password."
-            );
+            if(err.response?.status === 401) setError("Invalid email or password.");
+            else if(err.response?.status === 403) setError("Your account is blocked");
+            else if(err.response?.status === 429) setError("Too many failed login attempts. Try again in 10 minutes");
+            else setError(extractErrorMessage(err, "Error"));
         } finally {
             setLoading(false);
         }

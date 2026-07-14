@@ -1,23 +1,20 @@
 import { Navigate, Outlet } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
+import { Spinner } from "react-bootstrap";
 
-export default function ProtectedRoute({ children, requiredRole }) {
-    const { isAuthenticated, isAdmin, loading} = useAuth();
+export default function ProtectedRoute({ children, allowedRole }) {
+    const { isAuthenticated, isAdmin, loading } = useAuth();
 
-    if (loading)
-        return <>Loading...</>;
-    
+    if (loading) return <Spinner animation="border" className="align-center" />;
 
     if (!isAuthenticated)
         return <Navigate to="/login" replace />;
 
-     if (requiredRole === "ADMIN" && !isAdmin){
-        return <Navigate to="/trips" replace />;
-    }else{
-        return <Navigate to="/users" replace/>
+    const userRole = isAdmin ? "ADMIN" : "USER";
+
+    if (allowedRole !== userRole) {
+        return <Navigate to={userRole === "ADMIN" ? "/users" : "/trips"} replace />;
     }
-
-
 
     return children;
 

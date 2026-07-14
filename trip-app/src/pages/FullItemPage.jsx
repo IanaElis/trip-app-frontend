@@ -8,6 +8,7 @@ import EditTransportModal from "../components/itinerary/modals/edit/EditTranspor
 import EditActivityModal from "../components/itinerary/modals/edit/EditActivityModal";
 import EditFlightModal from "../components/itinerary/modals/edit/EditFlightModal";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import { extractErrorMessage } from "../utils/extractErrorMessage";
 
 const ITEM_CONFIG = {
     ACCOMMODATION: {
@@ -47,7 +48,7 @@ function FullItemPage() {
             setItem(data);
 
         } catch (err) {
-            setError(err);
+            setError(extractErrorMessage(err, "Could not load the item"));
         } finally {
             setLoading(false);
         }
@@ -86,8 +87,6 @@ function FullItemPage() {
     }
 
     if (loading) return <Spinner animation="border" className="align-center" />;
-
-    if (error) return <p>Could not load item</p>;
 
     async function handleDelete() {
         try {

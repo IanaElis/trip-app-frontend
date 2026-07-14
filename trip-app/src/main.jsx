@@ -4,9 +4,14 @@ import './index.css'
 import App from './App.jsx'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'leaflet/dist/leaflet.css';
+import "./services/googleMaps.js";
+import { Browser } from 'leaflet'
+import { BrowserRouter } from 'react-router-dom'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <BrowserRouter>
       <App />
+    </BrowserRouter>
   </StrictMode>,
 )

@@ -8,9 +8,7 @@ function InfoRow({ label, value }) {
                 <strong>{label}</strong>
             </Col>
 
-            <Col md={8}>
-                {value || "-"}
-            </Col>
+            <Col md={8}>{value || "-"} </Col>
         </Row>
     );
 }

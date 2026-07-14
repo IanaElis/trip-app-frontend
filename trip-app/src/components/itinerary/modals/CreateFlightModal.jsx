@@ -1,14 +1,16 @@
-import { Modal, Form, Button, Col, Row } from "react-bootstrap";
+import { Modal, Form, Button, Col, Row, Alert } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import { itineraryItemsApi } from "../../../services/itineraryService";
 import { carriersApi } from "../../../services/carrierService";
 import Select from "react-select"
 import DateTimePickerField from "../../DateTimePickerField";
 import PlaceAutocompleteInput from "../../map/PlaceAutocompleteInput";
+import { fromZonedTime } from "date-fns-tz";
+import { extractErrorMessage } from "../../../utils/extractErrorMessage";
 
-function CreateFlightModal({ tripId, show, onHide, onCreated }) {
+function CreateFlightModal({ tripId, show, onHide, onCreated, onUpdated }) {
     const [airlines, setAirlines] = useState([]);
-
+    const [error, setError] = useState("");
     const [form, setForm] = useState({
         startDateTime: "",
         endDateTime: "",
@@ -23,8 +25,12 @@ function CreateFlightModal({ tripId, show, onHide, onCreated }) {
 
     useEffect(() => {
         const load = async () => {
-            const data = await carriersApi.getAirlines();
-            setAirlines(data);
+            try {
+                const data = await carriersApi.getAirlines();
+                setAirlines(data);
+            } catch (err) {
+                setError(extractErrorMessage(err, "Failed to load airlines."));
+            }
         };
 
         load();
@@ -45,14 +51,21 @@ function CreateFlightModal({ tripId, show, onHide, onCreated }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log(form);
-        await itineraryItemsApi.createFlight(tripId, {
-            ...form,
-            startDateTime: new Date(form.startDateTime).toISOString(),
-            endDateTime: new Date(form.endDateTime).toISOString()
-        });
-        onCreated?.();
-        onHide();
+        setError("");
+        try {
+            await itineraryItemsApi.createFlight(tripId, {
+                ...form,
+                startDateTime: fromZonedTime(form.startDateTime, 
+                    form.departureAirport.timezoneId).toISOString(),
+                endDateTime: fromZonedTime(form.endDateTime, 
+                    form.arrivalAirport.timezoneId).toISOString()
+            });
+            onCreated?.();
+            onUpdated?.();
+            onHide();
+        } catch (err) {
+            setError(extractErrorMessage(err, "Error"));
+        }
     };
 
 
@@ -62,6 +75,12 @@ function CreateFlightModal({ tripId, show, onHide, onCreated }) {
             <Modal.Header closeButton>
                 <Modal.Title>Add Flight</Modal.Title>
             </Modal.Header>
+
+            {error &&
+                <Alert variant="danger">
+                    {error}
+                </Alert>
+            }
 
             <Modal.Body>
                 <Form onSubmit={handleSubmit}>
@@ -93,8 +112,7 @@ function CreateFlightModal({ tripId, show, onHide, onCreated }) {
                     <Form.Group className="mb-3">
                         <Form.Label>Departure Airport</Form.Label>
                         {/* Google Places Autocomplete */}
-                            <PlaceAutocompleteInput
-                            value={form.departureAirport?.address ?? ""}
+                        <PlaceAutocompleteInput
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
                                     ...prev,
@@ -109,13 +127,13 @@ function CreateFlightModal({ tripId, show, onHide, onCreated }) {
                                         timezoneId: place.timezoneId
                                     }
                                 }))
-                            }}/>
+                            }} />
                     </Form.Group>
 
                     <Form.Group className="mb-3">
                         <Form.Label>Arrival Airport</Form.Label>
                         {/* Google Places Autocomplete */}
-                            <PlaceAutocompleteInput
+                        <PlaceAutocompleteInput
                             value={form.arrivalAirport?.address ?? ""}
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
@@ -131,7 +149,7 @@ function CreateFlightModal({ tripId, show, onHide, onCreated }) {
                                         timezoneId: place.timezoneId
                                     }
                                 }))
-                            }}/>
+                            }} />
                     </Form.Group>
 
                     <Row className="g-2 mb-3">

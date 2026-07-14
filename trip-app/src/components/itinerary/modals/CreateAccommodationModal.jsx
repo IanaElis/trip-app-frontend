@@ -1,11 +1,13 @@
-import { Modal, Form, Button, Col, Row } from "react-bootstrap";
+import { Modal, Form, Button, Col, Row, Alert } from "react-bootstrap";
 import { useState } from "react";
 import { itineraryItemsApi } from "../../../services/itineraryService";
 import DateTimePickerField from "../../DateTimePickerField";
 import PlaceAutocompleteInput from "../../map/PlaceAutocompleteInput";
+import { extractErrorMessage } from "../../../utils/extractErrorMessage";
+import { fromZonedTime } from "date-fns-tz";
 
-function CreateAccommodationModal({ tripId, show, onHide, onCreated }) {
-
+function CreateAccommodationModal({ tripId, show, onHide, onCreated, onUpdated }) {
+    const [error, setError] = useState("");
     const [form, setForm] = useState({
         startDateTime: "",
         endDateTime: "",
@@ -25,19 +27,26 @@ function CreateAccommodationModal({ tripId, show, onHide, onCreated }) {
         setForm({
             ...form,
             location: place,
-            locationName: place.formatted_address || place.name || ""
+            locationName: place.formattedAddress || place.name || ""
         });
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await itineraryItemsApi.createAccommodation(tripId, {
-            ...form,
-            startDateTime: new Date(form.startDateTime).toISOString(),
-            endDateTime: new Date(form.endDateTime).toISOString()
-        });
-        onCreated?.();
-        onHide();
+        setError("");
+
+        try {
+            await itineraryItemsApi.createAccommodation(tripId, {
+                ...form,
+                startDateTime: fromZonedTime(form.startDateTime, form.location.timezoneId).toISOString(),
+                endDateTime: fromZonedTime(form.endDateTime, form.location.timezoneId).toISOString()
+            });
+            onCreated?.();
+            onUpdated?.();
+            onHide();
+        } catch (err) {
+            setError(extractErrorMessage(err, "Error"));
+        }
     };
 
 
@@ -48,6 +57,12 @@ function CreateAccommodationModal({ tripId, show, onHide, onCreated }) {
                 <Modal.Title>Add Accommodation</Modal.Title>
             </Modal.Header>
 
+            { error &&
+                <Alert variant="danger">
+                    {error}
+                </Alert>
+            }
+
             <Modal.Body>
                 <Form onSubmit={handleSubmit}>
 
@@ -55,8 +70,6 @@ function CreateAccommodationModal({ tripId, show, onHide, onCreated }) {
                         <Form.Label>Location</Form.Label>
                         {/* Google Places Autocomplete */}
                         <PlaceAutocompleteInput
-                            value={form.location?.formattedAddress ?? ""}
-                            placeholder="Search destination..."
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
                                     ...prev,
@@ -71,7 +84,7 @@ function CreateAccommodationModal({ tripId, show, onHide, onCreated }) {
                                         timezoneId: place.timezoneId
                                     }
                                 }))
-                            }}/>
+                            }} />
                     </Form.Group>
 
                     <Row className="mb-3">

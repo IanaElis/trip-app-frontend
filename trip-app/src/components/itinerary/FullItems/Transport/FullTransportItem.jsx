@@ -39,7 +39,6 @@ function FullTransportItem({ item, onBack, onEdit, onDelete }) {
                 label="Arrival Address"
                 value={item.arrivalLocation?.formattedAddress}
             />
-
         </FullItemCard>
     );
 }

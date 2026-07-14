@@ -15,18 +15,17 @@ function TimelineRow({ time, timeZone, icon, title, details, onClick }) {
     }).format(new Date(dateTime));
     }
 
-
     return (
         <Row className="itinerary-item mb-3" onClick={onClick}>
-            <Col xs="auto" className="item-time">
+            <Col xs={4} md={2} lg={3} className="item-time">
                 {formatTime(time, timeZone)}
             </Col>
 
-            <Col xs="auto" className="item-icon">
+            <Col xs={2} md={1} lg={2} className="item-icon">
                 {icon}
             </Col>
 
-            <Col xs={6} className="item-content text-start">
+            <Col xs={6} md={9} lg={7} className="item-content text-start">
                 <div className="item-title">
                     {title}
                 </div>

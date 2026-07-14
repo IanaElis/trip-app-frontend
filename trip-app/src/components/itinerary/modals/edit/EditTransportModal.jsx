@@ -1,14 +1,17 @@
-import { Modal, Form, Button, Col, Row } from "react-bootstrap";
+import { Modal, Form, Button, Col, Row, Alert } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import { itineraryItemsApi } from "../../../../services/itineraryService";
 import { carriersApi } from "../../../../services/carrierService";
 import DateTimePickerField from "../../../DateTimePickerField";
 import { useParams } from "react-router-dom";
 import PlaceAutocompleteInput from "../../../map/PlaceAutocompleteInput";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { extractErrorMessage } from "../../../../utils/extractErrorMessage";
 
 function EditTransportModal({ show, onHide, onUpdated, item }) {
     const [companies, setCompanies] = useState([]);
-    const {tripId} = useParams();
+    const { tripId } = useParams();
+    const [error, setError] = useState("");
 
     const [form, setForm] = useState({
         startDateTime: "",
@@ -27,44 +30,43 @@ function EditTransportModal({ show, onHide, onUpdated, item }) {
         if (!item) return;
 
         setForm({
-            startDateTime: item.startDateTime || "",
-            endDateTime: item.endDateTime || "",
+            startDateTime: toZonedTime(item.startDateTime, item.departureLocation.timezoneId) || "",
+            endDateTime: toZonedTime(item.endDateTime, item.arrivalLocation.timezoneId) || "",
             notes: item.notes || "",
             confirmationNumber: item.confirmationNumber || "",
             companyId: item.companyId || null,
             companyName: item.companyName || "",
             type: item.transportType || "",
             departureLocation: item.departureLocation
-                    ? {
-                        googlePlaceId: item.departureLocation.googlePlaceId,
-                        name: item.departureLocation.name,
-                        address: item.departureLocation.formattedAddress || item.departureLocation.address,
-                        city: item.departureLocation.city,
-                        country: item.departureLocation.country,
-                        latitude: item.departureLocation.latitude,
-                        longitude: item.departureLocation.longitude,
-                        timezoneId: item.departureLocation.timezoneId
-                    }
-                    : null,
-                    arrivalLocation:item.arrivalLocation
-                    ? {
-                        googlePlaceId:item.arrivalLocation.googlePlaceId,
-                        name:item.arrivalLocation.name,
-                        address:item.arrivalLocation.formattedAddress ||item.arrivalLocation.address,
-                        city:item.arrivalLocation.city,
-                        country:item.arrivalLocation.country,
-                        latitude:item.arrivalLocation.latitude,
-                        longitude:item.arrivalLocation.longitude,
-                        timezoneId:item.arrivalLocation.timezoneId
-                    }
-                    : null,
+                ? {
+                    googlePlaceId: item.departureLocation.googlePlaceId,
+                    name: item.departureLocation.name,
+                    address: item.departureLocation.formattedAddress || item.departureLocation.address,
+                    city: item.departureLocation.city,
+                    country: item.departureLocation.country,
+                    latitude: item.departureLocation.latitude,
+                    longitude: item.departureLocation.longitude,
+                    timezoneId: item.departureLocation.timezoneId
+                }
+                : null,
+            arrivalLocation: item.arrivalLocation
+                ? {
+                    googlePlaceId: item.arrivalLocation.googlePlaceId,
+                    name: item.arrivalLocation.name,
+                    address: item.arrivalLocation.formattedAddress || item.arrivalLocation.address,
+                    city: item.arrivalLocation.city,
+                    country: item.arrivalLocation.country,
+                    latitude: item.arrivalLocation.latitude,
+                    longitude: item.arrivalLocation.longitude,
+                    timezoneId: item.arrivalLocation.timezoneId
+                }
+                : null,
             transportIdentifier: item.transportId || "",
         });
     }, [item]);
 
     useEffect(() => {
         if (!form.type) return;
-
         const load = async () => {
             const data = await carriersApi.getCompaniesByType(form.type);
             setCompanies(data);
@@ -82,15 +84,17 @@ function EditTransportModal({ show, onHide, onUpdated, item }) {
 
     async function handleSubmit(e) {
         e.preventDefault();
-
-        await itineraryItemsApi.updateTransport(tripId, item.id, {
-            ...form,
-            startDateTime: new Date(form.startDateTime).toISOString(),
-            endDateTime: new Date(form.endDateTime).toISOString(),
-        });
-
-        onUpdated?.();
-        onHide();
+        try {
+            await itineraryItemsApi.updateTransport(tripId, item.id, {
+                ...form,
+                startDateTime: fromZonedTime(form.startDateTime, form.departureLocation.timezoneId).toISOString(),
+                endDateTime: fromZonedTime(form.endDateTime, form.arrivalLocation.timezoneId).toISOString()
+            });
+            onUpdated?.();
+            onHide();
+        } catch (err) {
+            setError(extractErrorMessage(err, "Error"));
+        }
     }
 
     return (
@@ -98,6 +102,13 @@ function EditTransportModal({ show, onHide, onUpdated, item }) {
             <Modal.Header closeButton>
                 <Modal.Title>Edit Transport</Modal.Title>
             </Modal.Header>
+
+            {
+                error &&
+                <Alert variant="danger">
+                    {error}
+                </Alert>
+            }
 
             <Form onSubmit={handleSubmit}>
                 <Modal.Body>
@@ -131,10 +142,17 @@ function EditTransportModal({ show, onHide, onUpdated, item }) {
                             }
                         />
                         <datalist id="company-list">
-                            {companies.map(c => (
-                                <option key={c} value={c} />
-                            ))}
+                            {companies.length > 0 &&
+                                companies.map(c => (
+                                    <option key={c} value={c} />
+                                ))}
                         </datalist>
+                        {form.type && companies.length === 0 && (
+                            <div className="text-muted small mt-1">
+                                No saved companies for this transport type.
+                                You can create a new one by typing it.
+                            </div>
+                        )}
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -149,7 +167,6 @@ function EditTransportModal({ show, onHide, onUpdated, item }) {
                     <Form.Group className="mb-3">
                         <Form.Label>Departure</Form.Label>
                         <PlaceAutocompleteInput
-                            value={form.departureLocation?.formattedAddress ?? ""}
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
                                     ...prev,
@@ -170,8 +187,7 @@ function EditTransportModal({ show, onHide, onUpdated, item }) {
 
                     <Form.Group className="mb-3">
                         <Form.Label>Arrival</Form.Label>
-   <PlaceAutocompleteInput
-                            value={form.arrivalLocation?.formattedAddress ?? ""}
+                        <PlaceAutocompleteInput
                             onPlaceSelect={(place) => {
                                 setForm(prev => ({
                                     ...prev,
