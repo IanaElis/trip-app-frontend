@@ -93,17 +93,6 @@ function ItineraryPage() {
         navigate("/trips");
     }
 
-    function handleMoreActions(key) {
-        switch (key) {
-            case "print":
-                navigate(`/trips/${tripId}/summary`);
-                break;
-            case "delete":
-                setShowDeleteModal(true)
-                break;
-            default: break;
-        }
-    }
 
 
     return (
@@ -112,7 +101,7 @@ function ItineraryPage() {
             <TripHeader
                 trip={trip}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
+                onDelete={() => setShowDeleteModal(true)}
                 onAddItem={handleAddItem}
                 onPrint={() => navigate(`/trips/${tripId}/summary`)}
             />
