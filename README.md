@@ -2,6 +2,9 @@
 
 React-based frontend for TripApp, a travel management application that allows users to organize trips, manage itineraries, view locations on an interactive map, and receive notifications.
 
+- **Backend:** [TripApp Backend](https://github.com/IanaElis/trip-app-backend)
+- **Project:** [TripApp](https://github.com/IanaElis/trip-app)
+
 ## Technologies
 
 - React
